@@ -5,6 +5,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -15,9 +17,15 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.example.treinopago.ui.screens.BillingDetailScreen
+import com.example.treinopago.ui.screens.BillingsScreen
+import com.example.treinopago.ui.screens.ClientsListScreen
+import com.example.treinopago.ui.screens.CreateClientScreen
 import com.example.treinopago.ui.screens.CreatePlanScreen
 import com.example.treinopago.ui.screens.PlansListScreen
 import com.example.treinopago.ui.theme.TreinoPagoTheme
@@ -27,6 +35,12 @@ object AppDestinations {
     const val MAIN_SCREEN = "main_screen"
     const val PLANS_LIST_SCREEN = "plans_list_screen"
     const val CREATE_PLAN_SCREEN = "create_plan_screen"
+    const val CLIENTS_LIST_SCREEN = "clients_list_screen"
+    const val CREATE_CLIENT_SCREEN = "create_client_screen"
+    const val BILLINGS_SCREEN = "billings_screen"
+    const val BILLING_DETAIL_SCREEN = "billing_detail_screen"
+    const val BILLING_ID_ARG = "billingId"
+    val BILLING_DETAIL_ROUTE_WITH_ARG = "$BILLING_DETAIL_SCREEN/{$BILLING_ID_ARG}"
 }
 
 class MainActivity : ComponentActivity() {
@@ -41,6 +55,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
@@ -63,6 +78,39 @@ fun AppNavigation() {
         composable(AppDestinations.CREATE_PLAN_SCREEN) {
             CreatePlanScreen(
                 navController = navController,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+        composable(AppDestinations.CLIENTS_LIST_SCREEN) {
+            ClientsListScreen(
+                navController = navController,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+        composable(AppDestinations.CREATE_CLIENT_SCREEN) {
+            CreateClientScreen(
+                navController = navController,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
+        composable(AppDestinations.BILLINGS_SCREEN) {
+            BillingsScreen(
+                navController = navController,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
+        composable(
+            route = AppDestinations.BILLING_DETAIL_ROUTE_WITH_ARG,
+            arguments = listOf(navArgument(AppDestinations.BILLING_ID_ARG) {
+                type = NavType.StringType
+            })
+        ) { backStackEntry ->
+            val billingId = backStackEntry.arguments?.getString(AppDestinations.BILLING_ID_ARG)
+            BillingDetailScreen(
+                navController = navController,
+                billingId = billingId,
                 modifier = Modifier.fillMaxSize()
             )
         }
@@ -96,7 +144,7 @@ fun MainScreen(navController: NavController, modifier: Modifier = Modifier) {
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
-            onClick = { /* TODO: navController.navigate("clients_screen") */ },
+            onClick = { navController.navigate(AppDestinations.CLIENTS_LIST_SCREEN) },
             modifier = Modifier.widthIn(min = 200.dp)
         ) {
             Text("Clientes")
@@ -105,7 +153,7 @@ fun MainScreen(navController: NavController, modifier: Modifier = Modifier) {
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
-            onClick = { /* TODO: navController.navigate("billings_screen") */ },
+            onClick = { navController.navigate(AppDestinations.BILLINGS_SCREEN) },
             modifier = Modifier.widthIn(min = 200.dp)
         ) {
             Text("Cobranças")
