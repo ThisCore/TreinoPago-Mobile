@@ -8,13 +8,17 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.isEmpty
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.treinopago.AppDestinations
+import com.example.treinopago.ViewModels.ClientViewModel
 import com.example.treinopago.ui.theme.TreinoPagoTheme
 
 // Modelo de dados simples para um cliente
@@ -24,17 +28,17 @@ data class Client(val id: String, val name: String)
 @Composable
 fun ClientsListScreen(
     navController: NavController,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    clientViewModel: ClientViewModel = viewModel()
     // Você pode adicionar um callback para quando o FAB for clicado,
     // onNavigateToCreateClient: () -> Unit
 ) {
-    val clients = remember {
-        mutableStateListOf(
-            Client("1", "Ana Silva"),
-            Client("2", "Carlos Souza"),
-            Client("3", "Beatriz Lima"),
-            Client("4", "Ricardo Alves")
-        )
+    val clients by clientViewModel.clients.observeAsState(initial = emptyList())
+    val isLoading by clientViewModel.isLoading.observeAsState(initial = false)
+    val errorMessage by clientViewModel.error.observeAsState(initial = null)
+
+    LaunchedEffect(key1 = Unit) {
+        clientViewModel.fetchAllClients()
     }
 
     Scaffold(
@@ -64,21 +68,25 @@ fun ClientsListScreen(
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
-                .padding(16.dp)
         ) {
-            if (clients.isEmpty()) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    Text("Nenhum cliente cadastrado ainda.")
+            if (isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else if (errorMessage != null) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Erro: $errorMessage", color = MaterialTheme.colorScheme.error)
+                }
+            } else if (clients.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Nenhum cliente encontrado.")
                 }
             } else {
                 LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+
                 ) {
                     items(clients) { client ->
-                        ClientItem(client = client)
+                        ClientItem(Client(client.id, client.name), modifier = Modifier.padding(8.dp))
                     }
                 }
             }
