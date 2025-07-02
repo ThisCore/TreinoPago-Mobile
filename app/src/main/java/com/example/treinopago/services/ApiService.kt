@@ -4,6 +4,7 @@ import com.example.treinopago.services.dtos.ClientResponse
 import com.example.treinopago.services.dtos.CreateClientRequest
 import com.example.treinopago.services.dtos.CreatePlanRequest
 import com.example.treinopago.services.dtos.PlanResponse
+import com.example.treinopago.services.dtos.UpdatePlanRequest
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -31,4 +32,17 @@ interface ApiService {
 
     @POST("plan")
     suspend fun createPlan(@Body planData: CreatePlanRequest): Response<PlanResponse>
+
+    @GET("plan/{id}")
+    suspend fun getPlanById(@Path("id") planId: String): Response<PlanResponse>
+
+    @PATCH("plan/{id}")
+    suspend fun updatePlan(
+        @Path("id") planId: String,
+        @Body planData: UpdatePlanRequest
+    ): Response<PlanResponse>
+
+    @DELETE("plan/{id}")
+    suspend fun deletePlan(@Path("id") planId: String): Response<Unit>
+
 }

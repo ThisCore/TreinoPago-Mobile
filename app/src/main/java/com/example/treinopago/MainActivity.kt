@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
@@ -27,6 +28,7 @@ import com.example.treinopago.ui.screens.BillingsScreen
 import com.example.treinopago.ui.screens.ClientsListScreen
 import com.example.treinopago.ui.screens.CreateClientScreen
 import com.example.treinopago.ui.screens.CreatePlanScreen
+import com.example.treinopago.ui.screens.PlanDetailScreen
 import com.example.treinopago.ui.screens.PlansListScreen
 import com.example.treinopago.ui.theme.TreinoPagoTheme
 
@@ -41,6 +43,9 @@ object AppDestinations {
     const val BILLING_DETAIL_SCREEN = "billing_detail_screen"
     const val BILLING_ID_ARG = "billingId"
     val BILLING_DETAIL_ROUTE_WITH_ARG = "$BILLING_DETAIL_SCREEN/{$BILLING_ID_ARG}"
+    const val PLAN_DETAIL_SCREEN = "plan_detail_screen"
+    const val PLAN_ID_ARG = "planId"
+    val PLAN_DETAIL_ROUTE_WITH_ARG = "$PLAN_DETAIL_SCREEN/{$PLAN_ID_ARG}"
 }
 
 class MainActivity : ComponentActivity() {
@@ -72,6 +77,9 @@ fun AppNavigation() {
                 onNavigateToCreatePlan = {
                     navController.navigate(AppDestinations.CREATE_PLAN_SCREEN)
                 },
+                onNavigateToPlanDetail = { planId ->
+                    navController.navigate("${AppDestinations.PLAN_DETAIL_SCREEN}/$planId")
+                },
                 modifier = Modifier.fillMaxSize()
             )
         }
@@ -80,6 +88,27 @@ fun AppNavigation() {
                 navController = navController,
                 modifier = Modifier.fillMaxSize()
             )
+        }
+        composable(
+            route = AppDestinations.PLAN_DETAIL_ROUTE_WITH_ARG,
+            arguments = listOf(navArgument(AppDestinations.PLAN_ID_ARG) {
+                type = NavType.StringType
+                nullable = false
+            })
+        ) { backStackEntry ->
+            val planId = backStackEntry.arguments?.getString(AppDestinations.PLAN_ID_ARG)
+            if (planId == null) {
+                Text("Erro: ID do plano não encontrado.")
+                LaunchedEffect(Unit) {
+                    navController.popBackStack()
+                }
+            } else {
+                PlanDetailScreen(
+                    navController = navController,
+                    planId = planId,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
         }
         composable(AppDestinations.CLIENTS_LIST_SCREEN) {
             ClientsListScreen(

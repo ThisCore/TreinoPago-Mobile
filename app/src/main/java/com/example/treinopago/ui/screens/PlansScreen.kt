@@ -30,6 +30,7 @@ import java.util.Locale
 fun PlansListScreen(
     navController: NavController,
     onNavigateToCreatePlan: () -> Unit,
+    onNavigateToPlanDetail: (planId: String) -> Unit,
     modifier: Modifier = Modifier,
     planViewModel: PlanViewModel = viewModel()
 ) {
@@ -112,9 +113,7 @@ fun PlansListScreen(
                         PlanApiItem(
                             plan = plan,
                             onClick = {
-                                // TODO: Definir ação ao clicar em um plano
-                                // Ex: navController.navigate("plan_details/${plan.id}")
-                                println("Plano clicado: ${plan.name}")
+                                onNavigateToPlanDetail(plan.id)
                             }
                         )
                     }
@@ -167,21 +166,6 @@ fun PlanApiItem(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
                 )
-                plan.durationDescription?.let {
-                    Text(
-                        text = it,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-            if (!plan.isActive) {
-                Text(
-                    "PLANO INATIVO",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.align(Alignment.End)
-                )
             }
         }
     }
@@ -194,7 +178,10 @@ fun PlansListScreenWithApiPreview() {
     TreinoPagoTheme {
         PlansListScreen(
             navController = rememberNavController(),
-            onNavigateToCreatePlan = {}
+            onNavigateToCreatePlan = {},
+            onNavigateToPlanDetail = TODO(),
+            modifier = TODO(),
+            planViewModel = TODO()
         )
     }
 }
@@ -209,9 +196,7 @@ fun PlanApiItemPreview() {
                 name = "Plano de Teste Premium",
                 description = "Descrição detalhada do plano de teste para o preview.",
                 price = 149.99,
-                durationDays = null,
-                durationDescription = "Mensal",
-                isActive = true
+                recurrence = BillingFrequency.WEEKLY
             ),
             onClick = {}
         )
@@ -228,9 +213,7 @@ fun PlanApiItemInactivePreview() {
                 name = "Plano Antigo",
                 description = "Este plano não está mais ativo.",
                 price = 79.00,
-                durationDays = null,
-                durationDescription = "Trimestral",
-                isActive = false
+                recurrence = BillingFrequency.WEEKLY
             ),
             onClick = {}
         )

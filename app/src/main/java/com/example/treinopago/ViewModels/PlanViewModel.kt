@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.treinopago.services.dtos.PlanResponse
 import com.example.treinopago.services.RetrofitInstance
 import com.example.treinopago.services.dtos.CreatePlanRequest
+import com.example.treinopago.services.dtos.UpdatePlanRequest
 import com.example.treinopago.ui.screens.BillingFrequency
 import kotlinx.coroutines.launch
 import java.util.Collections.frequency
@@ -24,6 +25,15 @@ class PlanViewModel : ViewModel() {
 
     private val _planCreationSuccess = MutableLiveData<Boolean>()
     val planCreationSuccess: LiveData<Boolean> = _planCreationSuccess
+
+    private val _selectedPlan = MutableLiveData<PlanResponse?>()
+    val selectedPlan: LiveData<PlanResponse?> = _selectedPlan
+
+    private val _planUpdateSuccess = MutableLiveData<Boolean>()
+    val planUpdateSuccess: LiveData<Boolean> = _planUpdateSuccess
+
+    private val _planDeletionSuccess = MutableLiveData<Boolean>()
+    val planDeletionSuccess: LiveData<Boolean> = _planDeletionSuccess
 
     fun fetchAllPlans() {
         _isLoading.value = true
@@ -85,6 +95,98 @@ class PlanViewModel : ViewModel() {
                 _isLoading.value = false
             }
         }
+    }
+
+    fun fetchPlanById(planId: String) {
+        _isLoading.value = true
+        _error.value = null
+        _selectedPlan.value = null
+        viewModelScope.launch {
+            try {
+                val response = RetrofitInstance.api.getPlanById(planId)
+                if (response.isSuccessful) {
+                    _selectedPlan.value = response.body()
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    _error.value = "Erro ao buscar plano ${response.code()}: ${errorBody ?: response.message()}"
+                }
+            } catch (e: Exception) {
+                _error.value = "Falha na conexão ao buscar plano: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun updateExistingPlan(
+        planId: String,
+        name: String?,
+//        description: String?,
+        price: Double?,
+        recurrence: BillingFrequency?,
+    ) {
+        _isLoading.value = true
+        _error.value = null
+        _planUpdateSuccess.value = false
+        viewModelScope.launch {
+            try {
+                val request = UpdatePlanRequest(
+                    name = name,
+//                    description = description,
+                    price = price,
+                    recurrence = recurrence
+                )
+                val response = RetrofitInstance.api.updatePlan(planId, request)
+                if (response.isSuccessful) {
+                    _planUpdateSuccess.value = true
+                    _selectedPlan.value = response.body()
+                    fetchAllPlans()
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    _error.value = "Erro ao atualizar plano ${response.code()}: ${errorBody ?: response.message()}"
+                }
+            } catch (e: Exception) {
+                _error.value = "Falha na conexão ao atualizar plano: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun deleteCurrentPlan(planId: String) {
+        _isLoading.value = true
+        _error.value = null
+        _planDeletionSuccess.value = false
+        viewModelScope.launch {
+            try {
+                val response = RetrofitInstance.api.deletePlan(planId)
+                if (response.isSuccessful) {
+                    _planDeletionSuccess.value = true
+                    if (_selectedPlan.value?.id == planId) {
+                        _selectedPlan.value = null
+                    }
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    _error.value = "Erro ao excluir plano ${response.code()}: ${errorBody ?: response.message()}"
+                }
+            } catch (e: Exception) {
+                _error.value = "Falha na conexão ao excluir plano: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun resetPlanDeletionStatus() {
+        _planDeletionSuccess.value = false
+    }
+
+    fun resetPlanUpdateStatus() {
+        _planUpdateSuccess.value = false
+    }
+
+    fun clearSelectedPlan() {
+        _selectedPlan.value = null
     }
 
     fun resetPlanCreationStatus() {

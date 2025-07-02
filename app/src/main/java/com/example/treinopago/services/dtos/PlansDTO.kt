@@ -8,11 +8,7 @@ data class PlanResponse(
     val name: String,
     val description: String?,
     val price: Double,
-    @SerializedName("duration_days")
-    val durationDays: Int?,
-    val durationDescription: String?,
-    @SerializedName("is_active")
-    val isActive: Boolean
+    val recurrence: BillingFrequency,
 )
 
 data class CreatePlanRequest(
@@ -20,4 +16,10 @@ data class CreatePlanRequest(
     val description: String?,
     val price: Double,
     val recurrence: BillingFrequency,
+)
+data class UpdatePlanRequest(
+    val name: String?,
+//    val description: String?,
+    val price: Double?,
+    val recurrence: BillingFrequency?,
 )
