@@ -20,6 +20,10 @@ class ClientViewModel : ViewModel() {
     private val _error = MutableLiveData<String?>()
     val error: LiveData<String?> = _error
 
+    private val _creationSuccess = MutableLiveData<Boolean>()
+    val creationSuccess: LiveData<Boolean> = _creationSuccess
+
+
     fun fetchAllClients() {
         _isLoading.value = true
         _error.value = null
@@ -42,22 +46,38 @@ class ClientViewModel : ViewModel() {
     fun createNewClient(name: String, email: String, startDate: Long) {
         _isLoading.value = true
         _error.value = null
+        _creationSuccess.value = false
         viewModelScope.launch {
             try {
                 val request = CreateClientRequest(name, email, startDate)
                 val response = RetrofitInstance.api.createClient(request)
                 if (response.isSuccessful) {
-                    fetchAllClients()
-                    println("Cliente criado: ${response.body()}")
+                    _creationSuccess.value = true
                 } else {
-                    _error.value = "Erro ao criar cliente: ${response.code()} - ${response.message()}"
+                    val errorBody = response.errorBody()?.string()
+                    val specificErrorMessage = if (!errorBody.isNullOrBlank()) {
+                        errorBody
+                    } else {
+                        response.message()
+                    }
+                    _error.value = "Erro ${response.code()}: $specificErrorMessage"
+                    println("Erro API: ${response.code()} - $errorBody")
                 }
             } catch (e: Exception) {
-                _error.value = "Falha ao criar cliente: ${e.message}"
+                _error.value = "Falha na conexão: ${e.message}"
+                println("Exceção de rede: ${e.message}")
             } finally {
                 _isLoading.value = false
             }
         }
+    }
+
+    fun resetCreationStatus() {
+        _creationSuccess.value = false
+    }
+
+    fun clearError() {
+        _error.value = null
     }
 
 }
