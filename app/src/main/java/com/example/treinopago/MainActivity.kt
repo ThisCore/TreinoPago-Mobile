@@ -25,6 +25,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.treinopago.ui.screens.BillingDetailScreen
 import com.example.treinopago.ui.screens.BillingsScreen
+import com.example.treinopago.ui.screens.ClientDetailScreen
 import com.example.treinopago.ui.screens.ClientsListScreen
 import com.example.treinopago.ui.screens.CreateClientScreen
 import com.example.treinopago.ui.screens.CreatePlanScreen
@@ -39,6 +40,9 @@ object AppDestinations {
     const val CREATE_PLAN_SCREEN = "create_plan_screen"
     const val CLIENTS_LIST_SCREEN = "clients_list_screen"
     const val CREATE_CLIENT_SCREEN = "create_client_screen"
+    const val CLIENT_DETAIL_SCREEN = "client_detail_screen"
+    const val CLIENT_ID_ARG = "clientId"
+    val CLIENT_DETAIL_ROUTE_WITH_ARG = "$CLIENT_DETAIL_SCREEN/{$CLIENT_ID_ARG}"
     const val BILLINGS_SCREEN = "billings_screen"
     const val BILLING_DETAIL_SCREEN = "billing_detail_screen"
     const val BILLING_ID_ARG = "billingId"
@@ -46,6 +50,7 @@ object AppDestinations {
     const val PLAN_DETAIL_SCREEN = "plan_detail_screen"
     const val PLAN_ID_ARG = "planId"
     val PLAN_DETAIL_ROUTE_WITH_ARG = "$PLAN_DETAIL_SCREEN/{$PLAN_ID_ARG}"
+
 }
 
 class MainActivity : ComponentActivity() {
@@ -113,6 +118,9 @@ fun AppNavigation() {
         composable(AppDestinations.CLIENTS_LIST_SCREEN) {
             ClientsListScreen(
                 navController = navController,
+                onNavigateToClientDetail = { clientId ->
+                    navController.navigate("${AppDestinations.CLIENT_DETAIL_SCREEN}/$clientId")
+                },
                 modifier = Modifier.fillMaxSize()
             )
         }
@@ -122,7 +130,27 @@ fun AppNavigation() {
                 modifier = Modifier.fillMaxSize()
             )
         }
-
+        composable(
+            route = AppDestinations.CLIENT_DETAIL_ROUTE_WITH_ARG,
+            arguments = listOf(navArgument(AppDestinations.CLIENT_ID_ARG) {
+                type = NavType.StringType
+                nullable = false
+            })
+        ) { backStackEntry ->
+            val clientId = backStackEntry.arguments?.getString(AppDestinations.CLIENT_ID_ARG)
+            if (clientId == null) {
+                Text("Erro: ID do cliente não encontrado.")
+                LaunchedEffect(Unit) {
+                    navController.popBackStack()
+                }
+            } else {
+                ClientDetailScreen(
+                    navController = navController,
+                    clientId = clientId,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
         composable(AppDestinations.BILLINGS_SCREEN) {
             BillingsScreen(
                 navController = navController,

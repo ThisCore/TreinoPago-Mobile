@@ -15,7 +15,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.semantics.error
+// import androidx.compose.ui.semantics.error
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -25,6 +25,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.treinopago.ViewModels.ClientViewModel
+import com.example.treinopago.ViewModels.PlanViewModel
 import com.example.treinopago.ui.theme.TreinoPagoTheme
 import java.text.SimpleDateFormat
 import java.util.*
@@ -39,18 +40,34 @@ fun Long.toFormattedDateString(): String {
 fun CreateClientScreen(
     navController: NavController,
     modifier: Modifier = Modifier,
-    clientViewModel: ClientViewModel = viewModel()
+    clientViewModel: ClientViewModel = viewModel(),
+    planViewModel: PlanViewModel = viewModel()
 ) {
     var clientName by remember { mutableStateOf("") }
     var clientEmail by remember { mutableStateOf("") }
     var selectedStartDateMillis by remember { mutableStateOf(Calendar.getInstance().timeInMillis) }
     val showDatePickerDialog = remember { mutableStateOf(false) }
 
+
+    var expandedPlanDropdown by remember { mutableStateOf(false) }
+    var selectedPlanText by remember { mutableStateOf("") }
+    var selectedPlanId by remember { mutableStateOf<String?>(null) }
+
     val context = LocalContext.current
 
-    val isLoading by clientViewModel.isLoading.observeAsState(initial = false)
+    val isLoadingClient by clientViewModel.isLoading.observeAsState(initial = false)
     val creationSuccess by clientViewModel.creationSuccess.observeAsState(initial = false)
-    val errorMessage by clientViewModel.error.observeAsState(initial = null)
+    val errorMessageClient by clientViewModel.error.observeAsState(initial = null)
+
+
+    val plansList by planViewModel.plans.observeAsState(initial = emptyList())
+    val isLoadingPlans by planViewModel.isLoading.observeAsState(initial = false)
+    val errorMessagePlan by planViewModel.error.observeAsState(initial = null)
+
+
+    LaunchedEffect(Unit) {
+        planViewModel.fetchAllPlans()
+    }
 
     LaunchedEffect(creationSuccess) {
         if (creationSuccess) {
@@ -60,10 +77,17 @@ fun CreateClientScreen(
         }
     }
 
-    LaunchedEffect(errorMessage) {
-        errorMessage?.let {
-            Toast.makeText(context, "Erro: $it", Toast.LENGTH_LONG).show()
+    LaunchedEffect(errorMessageClient) {
+        errorMessageClient?.let {
+            Toast.makeText(context, "Erro ao criar cliente: $it", Toast.LENGTH_LONG).show()
             clientViewModel.clearError()
+        }
+    }
+
+    LaunchedEffect(errorMessagePlan) {
+        errorMessagePlan?.let {
+            Toast.makeText(context, "Erro ao carregar planos: $it", Toast.LENGTH_LONG).show()
+            planViewModel.clearError()
         }
     }
 
@@ -100,8 +124,8 @@ fun CreateClientScreen(
                     capitalization = KeyboardCapitalization.Words,
                     imeAction = ImeAction.Next
                 ),
-                isError = false,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isLoadingClient
             )
 
             OutlinedTextField(
@@ -113,25 +137,26 @@ fun CreateClientScreen(
                     keyboardType = KeyboardType.Email,
                     imeAction = ImeAction.Next
                 ),
-                isError = false,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isLoadingClient
             )
 
             OutlinedTextField(
                 value = selectedStartDateMillis.toFormattedDateString(),
-                onValueChange = { /* Não editável diretamente */ },
+                onValueChange = {  },
                 label = { Text("Data de Início") },
                 readOnly = true,
                 trailingIcon = {
                     Icon(
                         imageVector = Icons.Filled.CalendarToday,
                         contentDescription = "Selecionar Data",
-                        modifier = Modifier.clickable { if (!isLoading) showDatePickerDialog.value = true }
+                        modifier = Modifier.clickable { if (!isLoadingClient) showDatePickerDialog.value = true }
                     )
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { if (!isLoading) showDatePickerDialog.value = true }
+                    .clickable { if (!isLoadingClient) showDatePickerDialog.value = true },
+                enabled = !isLoadingClient
             )
 
             if (showDatePickerDialog.value) {
@@ -160,26 +185,88 @@ fun CreateClientScreen(
                 }
             }
 
+
+            ExposedDropdownMenuBox(
+                expanded = expandedPlanDropdown,
+                onExpandedChange = {
+                    if (!isLoadingPlans && !isLoadingClient) {
+                        expandedPlanDropdown = !expandedPlanDropdown
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                OutlinedTextField(
+                    value = selectedPlanText.ifEmpty {
+                        if (isLoadingPlans) "Carregando planos..." else "Selecione um plano"
+                    },
+                    onValueChange = { },
+                    label = { Text("Plano") },
+                    readOnly = true,
+                    trailingIcon = {
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedPlanDropdown)
+                    },
+                    modifier = Modifier
+                        .menuAnchor()
+                        .fillMaxWidth(),
+                    enabled = !isLoadingClient && !isLoadingPlans
+                )
+                ExposedDropdownMenu(
+                    expanded = expandedPlanDropdown,
+                    onDismissRequest = { expandedPlanDropdown = false }
+                ) {
+                    if (isLoadingPlans && plansList.isEmpty()) {
+                        DropdownMenuItem(
+                            text = { Text("Carregando planos...") },
+                            onClick = { },
+                            enabled = false
+                        )
+                    } else if (plansList.isEmpty()) {
+                        DropdownMenuItem(
+                            text = { Text("Nenhum plano disponível") },
+                            onClick = { },
+                            enabled = false
+                        )
+                    } else {
+                        plansList.forEach { plan ->
+                            DropdownMenuItem(
+                                text = { Text(plan.name) },
+                                onClick = {
+                                    selectedPlanText = plan.name
+                                    selectedPlanId = plan.id
+                                    expandedPlanDropdown = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.weight(1f))
 
-            if (isLoading) {
+            if (isLoadingClient) {
                 CircularProgressIndicator()
             } else {
                 Button(
                     onClick = {
-                        // TODO: Adicionar validação dos campos antes de enviar
-                        if (clientName.isNotBlank() && clientEmail.isNotBlank()) {
+                        if (clientName.isNotBlank() && clientEmail.isNotBlank() && selectedPlanId != null) {
                             clientViewModel.createNewClient(
                                 name = clientName,
                                 email = clientEmail,
-                                startDate = selectedStartDateMillis
+                                billingStartDate = selectedStartDateMillis,
+                                planId = selectedPlanId!!
                             )
                         } else {
-                            Toast.makeText(context, "Por favor, preencha todos os campos.", Toast.LENGTH_SHORT).show()
+                            val message = when {
+                                clientName.isBlank() -> "Por favor, preencha o nome."
+                                clientEmail.isBlank() -> "Por favor, preencha o email."
+                                selectedPlanId == null -> "Por favor, selecione um plano."
+                                else -> "Por favor, preencha todos os campos obrigatórios."
+                            }
+                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = !isLoading
+                    enabled = !isLoadingClient && !isLoadingPlans
                 ) {
                     Text("Salvar Cliente")
                 }
@@ -192,6 +279,10 @@ fun CreateClientScreen(
 @Composable
 fun CreateClientScreenPreview() {
     TreinoPagoTheme {
-        CreateClientScreen(navController = rememberNavController())
+        CreateClientScreen(
+            navController = rememberNavController(),
+            clientViewModel = viewModel(),
+            planViewModel = viewModel()
+        )
     }
 }

@@ -1,11 +1,13 @@
 package com.example.treinopago.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -21,7 +23,6 @@ import com.example.treinopago.AppDestinations
 import com.example.treinopago.ViewModels.ClientViewModel
 import com.example.treinopago.ui.theme.TreinoPagoTheme
 
-// Modelo de dados simples para um cliente
 data class Client(val id: String, val name: String)
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -29,9 +30,8 @@ data class Client(val id: String, val name: String)
 fun ClientsListScreen(
     navController: NavController,
     modifier: Modifier = Modifier,
-    clientViewModel: ClientViewModel = viewModel()
-    // Você pode adicionar um callback para quando o FAB for clicado,
-    // onNavigateToCreateClient: () -> Unit
+    clientViewModel: ClientViewModel = viewModel(),
+    onNavigateToClientDetail: (clientId: String) -> Unit
 ) {
     val clients by clientViewModel.clients.observeAsState(initial = emptyList())
     val isLoading by clientViewModel.isLoading.observeAsState(initial = false)
@@ -82,11 +82,15 @@ fun ClientsListScreen(
                     Text("Nenhum cliente encontrado.")
                 }
             } else {
-                LazyColumn(
-
-                ) {
-                    items(clients) { client ->
-                        ClientItem(Client(client.id, client.name), modifier = Modifier.padding(8.dp))
+                LazyColumn {
+                    items(clients, key = { client -> client.id }) { clientData ->
+                        ClientItem(
+                            client = Client(clientData.id, clientData.name),
+                            onClick = {
+                                onNavigateToClientDetail(clientData.id)
+                            },
+                            modifier = Modifier.padding(8.dp)
+                        )
                     }
                 }
             }
@@ -110,17 +114,31 @@ fun ClientItem(client: Client, modifier: Modifier = Modifier) {
                 text = client.name,
                 style = MaterialTheme.typography.titleMedium
             )
-            // TODO dicionar mais detalhes ou botões aqui (ver detalhes, editar, etc.)
-            // Ex: IconButton(onClick = { /* Ver detalhes do cliente */ }) { Icon(Icons.Filled.Info, "Detalhes")}
         }
     }
 }
 
-@Preview(showBackground = true)
 @Composable
-fun ClientsListScreenPreview() {
-    TreinoPagoTheme {
-        ClientsListScreen(navController = rememberNavController())
+fun ClientItem(client: Client, modifier: Modifier = Modifier, onClick: () -> Unit = {}) { // Adicionado onClick
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = client.name,
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            Icon(Icons.Filled.Info, "Detalhes")
+        }
     }
 }
 
