@@ -1,5 +1,6 @@
 package com.example.treinopago.services
 
+import com.example.treinopago.services.dtos.BillingDTO
 import com.example.treinopago.services.dtos.ClientResponse
 import com.example.treinopago.services.dtos.CreateClientRequest
 import com.example.treinopago.services.dtos.CreatePlanRequest
@@ -45,5 +46,12 @@ interface ApiService {
 
     @DELETE("plan/{id}")
     suspend fun deletePlan(@Path("id") planId: String): Response<Unit>
+
+    @GET("charge")
+    suspend fun getAllBillings(): Response<List<BillingDTO>>
+
+    @GET("charge/{id}")
+    suspend fun getBillingById(@Path("id") billingId: String): Response<BillingDTO>
+
 
 }

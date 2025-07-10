@@ -1,159 +1,115 @@
 package com.example.treinopago.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
-import com.example.treinopago.ui.theme.TreinoPagoTheme
-import java.util.Locale
+import com.example.treinopago.ViewModels.BillingViewModel
+import com.example.treinopago.services.dtos.BillingDTO
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BillingDetailScreen(
     navController: NavController,
     billingId: String?,
-    modifier: Modifier = Modifier
-    // billingViewModel: BillingViewModel = viewModel()
+    modifier: Modifier = Modifier,
+    billingViewModel: BillingViewModel = viewModel()
 ) {
-    val sampleBillings = remember {
-        listOf(
-            Billing("1", "Ana Silva", "Plano Mensal", 99.90, System.currentTimeMillis() + (7 * 24 * 60 * 60 * 1000), false),
-            Billing("2", "Carlos Souza", "Plano Trimestral", 250.00, System.currentTimeMillis() - (10 * 24 * 60 * 60 * 1000), true),
-            Billing("3", "Beatriz Lima", "Plano Anual", 1000.00, System.currentTimeMillis() + (30 * 24 * 60 * 60 * 1000L), false),
-            Billing("4", "Ricardo Alves", "Plano Mensal", 99.90, System.currentTimeMillis() - (5 * 24 * 60 * 60 * 1000), true),
-            Billing("5", "Ana Silva", "Plano Mensal", 99.90, System.currentTimeMillis() - (40 * 24 * 60 * 60 * 1000L), true)
-        )
+    val selectedBilling by billingViewModel.selectedBilling.observeAsState()
+    val isLoading by billingViewModel.isLoading.observeAsState(initial = false)
+    val errorMessage by billingViewModel.error.observeAsState(initial = null)
+    val context = LocalContext.current
+
+    LaunchedEffect(billingId) {
+        if (billingId != null) {
+            billingViewModel.fetchBillingById(billingId)
+        } else {
+            Toast.makeText(context, "ID da cobrança inválido.", Toast.LENGTH_LONG).show()
+            navController.popBackStack()
+        }
     }
-    val billing = sampleBillings.find { it.id == billingId }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            billingViewModel.clearSelectedBilling()
+        }
+    }
+
+    LaunchedEffect(errorMessage) {
+        errorMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            billingViewModel.clearError()
+            if (selectedBilling == null && !isLoading) {
+                navController.popBackStack()
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Detalhes da Cobrança") },
+                title = { Text(if (selectedBilling != null) "Detalhes da Cobrança" else "Carregando...") },
                 navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Voltar"
-                        )
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Voltar")
                     }
                 }
             )
         },
         modifier = modifier.fillMaxSize()
     ) { innerPadding ->
-        if (billing == null) {
-            Box(
-                modifier = Modifier
-                    .padding(innerPadding)
-                    .fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("Cobrança não encontrada.")
-            }
-            return@Scaffold
-        }
-
-        Column(
+        Box(
             modifier = Modifier
                 .padding(innerPadding)
-                .padding(16.dp)
-                .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .fillMaxSize()
         ) {
-            DetailItem(label = "Cliente:", value = billing.clientName)
-            DetailItem(label = "Plano:", value = billing.planName)
-            DetailItem(label = "Valor:", value = "R$${String.format(Locale.getDefault(), "%.2f", billing.amount)}")
-
-            val dateLabel = if (billing.isPaid) "Data do Pagamento:" else "Data de Vencimento:"
-            DetailItem(label = dateLabel, value = billing.dueDate.toFormattedDateForBilling())
-
-            DetailItem(label = "Status:", value = if (billing.isPaid) "Paga" else "Pendente")
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            if (!billing.isPaid) {
-                Button(
-                    onClick = {
-                        // TODO: Implementar lógica para marcar como paga
-                        println("Marcar como paga: ${billing.id}")
-                        // Exemplo: navController.navigateUp() após marcar
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Marcar como Paga")
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-
-            OutlinedButton(
-                onClick = {
-                    // TODO: Implementar lógica para gerar 2ª via ou outra ação
-                    println("Gerar 2ª via: ${billing.id}")
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(if (billing.isPaid) "Ver Recibo" else "Gerar 2ª Via Boleto")
+            if (isLoading) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            } else if (selectedBilling != null) {
+                BillingDetailContent(billing = selectedBilling!!)
+            } else if (billingId != null) {
+                Text("Cobrança não encontrada ou erro ao carregar.", modifier = Modifier.align(Alignment.Center))
             }
         }
     }
 }
 
 @Composable
-fun DetailItem(label: String, value: String) {
-    Column {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-            color = MaterialTheme.colorScheme.onSurface
-        )
+fun BillingDetailContent(billing: BillingDTO) {
+    Column(
+        modifier = Modifier
+            .padding(16.dp)
+            .fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text("Detalhes da Cobrança", fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
+        Divider(modifier = Modifier.padding(vertical = 8.dp))
+
+        InfoRow("ID da Cobrança:", billing.id)
+        InfoRow("Cliente:", billing.client.name)
+        InfoRow("Plano:", billing.client.plan.name)
+        InfoRow("Valor:", "R$ ${String.format("%.2f", billing.amount)}")
+        InfoRow("Data de Vencimento:", billing.dueDate)
+
+
     }
 }
 
-
-@Preview(showBackground = true)
 @Composable
-fun BillingDetailScreenPaidPreview() {
-    TreinoPagoTheme {
-        BillingDetailScreen(
-            navController = rememberNavController(),
-            billingId = "2"
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun BillingDetailScreenPendingPreview() {
-    TreinoPagoTheme {
-        BillingDetailScreen(
-            navController = rememberNavController(),
-            billingId = "1"
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun BillingDetailScreenNotFoundPreview() {
-    TreinoPagoTheme {
-        BillingDetailScreen(
-            navController = rememberNavController(),
-            billingId = "nonexistent"
-        )
+fun InfoRow(label: String, value: String) {
+    Row(modifier = Modifier.fillMaxWidth()) {
+        Text(text = label, fontWeight = FontWeight.Bold, modifier = Modifier.weight(0.4f))
+        Text(text = value, modifier = Modifier.weight(0.6f))
     }
 }

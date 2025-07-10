@@ -1,12 +1,15 @@
 package com.example.treinopago
 
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,7 +34,9 @@ import com.example.treinopago.ui.screens.CreateClientScreen
 import com.example.treinopago.ui.screens.CreatePlanScreen
 import com.example.treinopago.ui.screens.PlanDetailScreen
 import com.example.treinopago.ui.screens.PlansListScreen
+import com.example.treinopago.ui.screens.SettingsScreen
 import com.example.treinopago.ui.theme.TreinoPagoTheme
+import androidx.compose.ui.Alignment.Horizontal
 
 
 object AppDestinations {
@@ -50,10 +55,12 @@ object AppDestinations {
     const val PLAN_DETAIL_SCREEN = "plan_detail_screen"
     const val PLAN_ID_ARG = "planId"
     val PLAN_DETAIL_ROUTE_WITH_ARG = "$PLAN_DETAIL_SCREEN/{$PLAN_ID_ARG}"
+    const val SETTINGS_SCREEN = "settings_screen"
 
 }
 
 class MainActivity : ComponentActivity() {
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -65,6 +72,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppNavigation() {
@@ -171,49 +179,76 @@ fun AppNavigation() {
                 modifier = Modifier.fillMaxSize()
             )
         }
+
+        composable(AppDestinations.SETTINGS_SCREEN) {
+            SettingsScreen(
+                navController = navController,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
     }
 }
 
 @Composable
 fun MainScreen(navController: NavController, modifier: Modifier = Modifier) {
-    Column(
+    Box(
         modifier = modifier
             .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(
-            text = "TreinoPago",
-            style = TextStyle(
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold
-            ),
-            modifier = Modifier.padding(top = 32.dp, bottom = 48.dp)
-        )
 
-        Button(
-            onClick = { navController.navigate(AppDestinations.PLANS_LIST_SCREEN) },
-            modifier = Modifier.widthIn(min = 200.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Text("Planos")
+            Text(
+                text = "TreinoPago",
+                style = TextStyle(
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                ),
+                modifier =
+                    Modifier.padding(top = 32.dp, bottom = 48.dp)
+            )
+
+            Button(
+                onClick = { navController.navigate(AppDestinations.PLANS_LIST_SCREEN) },
+                modifier = Modifier.widthIn(min = 200.dp)
+            ) {
+                Text("Planos")
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = { navController.navigate(AppDestinations.CLIENTS_LIST_SCREEN) },
+                modifier = Modifier.widthIn(min = 200.dp)
+            ) {
+                Text("Clientes")
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = { navController.navigate(AppDestinations.BILLINGS_SCREEN) },
+                modifier = Modifier.widthIn(min = 200.dp)
+            ) {
+                Text("Cobranças")
+            }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(
-            onClick = { navController.navigate(AppDestinations.CLIENTS_LIST_SCREEN) },
-            modifier = Modifier.widthIn(min = 200.dp)
+        IconButton(
+            onClick = { navController.navigate(AppDestinations.SETTINGS_SCREEN) },
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(16.dp)
         ) {
-            Text("Clientes")
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(
-            onClick = { navController.navigate(AppDestinations.BILLINGS_SCREEN) },
-            modifier = Modifier.widthIn(min = 200.dp)
-        ) {
-            Text("Cobranças")
+            Icon(
+                imageVector = Icons.Filled.Settings,
+                contentDescription = "Configurações"
+            )
         }
     }
 }

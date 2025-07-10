@@ -64,6 +64,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation("androidx.navigation:navigation-compose:2.9.0")
     implementation("androidx.compose.material:material-icons-extended:...")
+    implementation(libs.androidx.material.icons.extended.android)
     implementation (libs.retrofit2.retrofit)
     implementation(libs.converter.gson)
     implementation(libs.converter.moshi)
