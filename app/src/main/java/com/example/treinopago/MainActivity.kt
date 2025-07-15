@@ -195,6 +195,7 @@ fun AppNavigation(themeViewModel: ThemeViewModel) {
         composable(AppDestinations.SETTINGS_SCREEN) {
             SettingsScreen(
                 navController = navController,
+                themeViewModel = themeViewModel,
                 modifier = Modifier.fillMaxSize()
             )
         }

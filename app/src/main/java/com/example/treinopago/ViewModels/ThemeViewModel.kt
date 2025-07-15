@@ -2,9 +2,8 @@ package com.example.treinopago.ViewModels
 
 import android.app.Application
 import android.content.Context
+import androidx.core.content.edit
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,15 +20,15 @@ class ThemeViewModel(application: Application) : AndroidViewModel(application) {
     fun toggleTheme() {
         val newTheme = !_isDarkTheme.value
         _isDarkTheme.value = newTheme
-        sharedPreferences.edit()
-            .putBoolean("is_dark_theme", newTheme)
-            .apply()
+        sharedPreferences.edit {
+            putBoolean("is_dark_theme", newTheme)
+        }
     }
 
     fun setTheme(isDark: Boolean) {
         _isDarkTheme.value = isDark
-        sharedPreferences.edit()
-            .putBoolean("is_dark_theme", isDark)
-            .apply()
+        sharedPreferences.edit {
+            putBoolean("is_dark_theme", isDark)
+        }
     }
 }
