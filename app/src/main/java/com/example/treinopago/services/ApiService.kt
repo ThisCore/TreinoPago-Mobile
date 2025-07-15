@@ -4,8 +4,10 @@ import com.example.treinopago.services.dtos.BillingDTO
 import com.example.treinopago.services.dtos.ClientResponse
 import com.example.treinopago.services.dtos.CreateClientRequest
 import com.example.treinopago.services.dtos.CreatePlanRequest
+import com.example.treinopago.services.dtos.PixKeyResponse
 import com.example.treinopago.services.dtos.PlanResponse
 import com.example.treinopago.services.dtos.UpdateClientRequest
+import com.example.treinopago.services.dtos.UpdatePixKeyRequest
 import com.example.treinopago.services.dtos.UpdatePlanRequest
 import retrofit2.Response
 import retrofit2.http.*
@@ -53,5 +55,9 @@ interface ApiService {
     @GET("charge/{id}")
     suspend fun getBillingById(@Path("id") billingId: String): Response<BillingDTO>
 
+    @POST("system-config")
+    suspend fun updateUserPixKey(@Body request: UpdatePixKeyRequest): Response<Unit>
 
+    @GET("system-config")
+    suspend fun getPixKey(): Response<PixKeyResponse>
 }
