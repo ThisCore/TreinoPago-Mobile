@@ -160,7 +160,7 @@ fun BillingsScreen(
                     if (paidBillings.isNotEmpty()) {
                         item {
                             Text(
-                                "Faturadas",
+                                "Enviadas",
                                 style = MaterialTheme.typography.titleMedium,
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                             )
