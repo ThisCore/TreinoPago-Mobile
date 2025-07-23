@@ -198,7 +198,7 @@ fun ClientDetailScreen(
                 OutlinedTextField(
                     value = clientEmail,
                     onValueChange = { clientEmail = it },
-                    label = { Text("Email (Opcional)") },
+                    label = { Text("Email") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !isLoading

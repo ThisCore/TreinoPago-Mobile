@@ -8,6 +8,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -80,7 +81,7 @@ class MainActivity : ComponentActivity() {
             val isDarkTheme by themeViewModel.isDarkTheme.collectAsState()
 
             TreinoPagoTheme(darkTheme = isDarkTheme) {
-                AppNavigation(themeViewModel = themeViewModel)
+                AppNavigation(themeViewModel = themeViewModel, isDarkTheme = isDarkTheme)
             }
         }
     }
@@ -89,13 +90,14 @@ class MainActivity : ComponentActivity() {
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppNavigation(themeViewModel: ThemeViewModel) {
+fun AppNavigation(themeViewModel: ThemeViewModel, isDarkTheme: Boolean) {
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = AppDestinations.MAIN_SCREEN) {
         composable(AppDestinations.MAIN_SCREEN) {
             MainScreen(
                 navController = navController,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
+                isDarkTheme = isDarkTheme
             )
         }
         composable(AppDestinations.PLANS_LIST_SCREEN) {
@@ -205,7 +207,7 @@ fun AppNavigation(themeViewModel: ThemeViewModel) {
 }
 
 @Composable
-fun MainScreen(navController: NavController, modifier: Modifier = Modifier) {
+fun MainScreen(navController: NavController, modifier: Modifier = Modifier, isDarkTheme: Boolean) {
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -242,8 +244,15 @@ fun MainScreen(navController: NavController, modifier: Modifier = Modifier) {
                         .padding(32.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+
+                    val logoResId = if (!isDarkTheme) {
+                        R.drawable.treino2
+                    } else {
+                        R.drawable.img
+                    }
+
                     Image(
-                        painter = painterResource(id = R.drawable.treino2),
+                        painter = painterResource(id = logoResId),
                         contentDescription = "Logo",
                         modifier = Modifier.size(90.dp)
                     )
@@ -376,10 +385,10 @@ fun ModernNavigationButton(
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun MainScreenPreview() {
-    TreinoPagoTheme {
-        MainScreen(navController = rememberNavController())
-    }
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun MainScreenPreview() {
+//    TreinoPagoTheme {
+//        MainScreen(navController = rememberNavController())
+//    }
+//}
